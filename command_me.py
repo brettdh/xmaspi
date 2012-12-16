@@ -10,10 +10,16 @@ import logger
 import SocketServer
 
 from multiprocessing import Process, Lock
+import threading
 
 import driver
 
 global glock
+
+global my_emulator
+
+from emulator import Emulator
+my_emulator = None
 
 class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
 
@@ -21,6 +27,9 @@ class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
         global glock
         if len(sys.argv) == 1:
             d = driver.Driver()
+        elif sys.argv[1] == "emulator":
+            global my_emulator
+            d = my_emulator
 
         try:
             name = self.request.recv(1)
@@ -111,7 +120,7 @@ Looking forward to your creations! :)
                         print "bulb %d brightness %d RGB %d %d %d" % (id, bri, red, grn, blu)
                     self.request.sendall("Invalid parameter, skipped\\0")
                     continue
-                if len(sys.argv) == 1:
+                if len(sys.argv) == 1 or my_emulator != None:
                     d.write_led(id, bri, blu, grn, red)
                 else:
                     logger.debug("Would set bulb %d to brightness %d with RGB %d %d %d" % (id, bri, red, grn, blu))
@@ -137,6 +146,8 @@ class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.bind(self.server_address)
 
+global server
+
 def func(lock):
     logger.info("Spawning command_me...")
 
@@ -145,9 +156,26 @@ def func(lock):
     global glock
     glock = lock
 
+    global server
     server = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler)
     server.serve_forever()
 
 if __name__ == '__main__':
-    lock = Lock()
-    Process(target=func, args=(lock,)).start()
+    if len(sys.argv) > 1 and sys.argv[1] == "emulator":
+        from PyQt4.QtGui import QApplication
+        app = QApplication(sys.argv)
+
+        my_emulator = Emulator()
+        
+        lock = threading.Lock()
+        listener = threading.Thread(target=func, args=(lock,))
+        listener.start()
+        
+        app.exec_()
+
+        global server
+        server.shutdown()
+        listener.join()
+    else:
+        lock = Lock()
+        Process(target=func, args=(lock,)).start()
