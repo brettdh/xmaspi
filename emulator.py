@@ -3,11 +3,10 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-# TODO: implement with pyqt.
 class EmulatedBulb(QWidget):
     def __init__(self):
         super(EmulatedBulb, self).__init__()
-        self.__color = (0.,0.,0.,0.) # RGBA
+        self.__color = (0.,0.,0.,255.) # RGBA
 
         self.__geometry = (0, 0, 10, 10)
         #self.setGeometry(*self.__geometry)
@@ -17,10 +16,13 @@ class EmulatedBulb(QWidget):
         qp.begin(self)
         
         qp.setPen(Qt.black)
+
+        # draw black background, with light color over top with alpha
         
-        qcolor = QColor(*self.__color)
-        qp.setBrush(qcolor)
-        qp.drawEllipse(*self.__geometry)
+        fgcolor = QColor(*self.__color)
+        for color in [Qt.black, fgcolor]:
+            qp.setBrush(color)
+            qp.drawEllipse(*self.__geometry)
         
         qp.end()
 
