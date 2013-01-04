@@ -43,9 +43,9 @@ class EmulatorGui(QDialog):
         QDialog.__init__(self, parent)
         self.__bulbs = []
 
-        self.setGeometry(0, 0, 1100, 110)
+        self.setGeometry(0, 0, 100, 800)
         
-        self.__layout = QHBoxLayout(self)
+        self.__layout = QVBoxLayout(self)
         self.__layout.setSpacing(0)
 
     def addBulb(self, bulb):
